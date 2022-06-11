@@ -1,0 +1,30 @@
+FROM rust:bullseye
+LABEL maintainer="Renato Biancalana da Silva<eu@reesilva.dev>"
+
+RUN apt update \
+    && apt install -y fish git curl sudo \
+    && apt-get clean -y && rm -rf /var/lib/apt/lists/*
+
+RUN curl -o starship-install.sh https://starship.rs/install.sh \
+    && chmod a+x starship-install.sh \
+    && ./starship-install.sh -f -y
+
+RUN adduser --disabled-password --shell /usr/bin/fish --gecos '' reesilva
+RUN adduser reesilva sudo
+RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+RUN mkdir /home/reesilva/.config \
+    && chown -R reesilva: /home/reesilva/.config
+USER reesilva
+WORKDIR /home/reesilva
+
+COPY files/fish.tar.gz /home/reesilva
+COPY files/omf.tar.gz /home/reesilva
+COPY files/starship.toml /home/reesilva
+
+RUN curl -o fish-install https://raw.githubusercontent.com/oh-my-fish/oh-my-fish/master/bin/install \
+    && chmod a+x fish-install \
+    && fish fish-install --noninteractive \
+    && tar xvzf fish.tar.gz -C /home/reesilva/.config/ \
+    && tar xvzf omf.tar.gz -C /home/reesilva/.config/
+
+CMD [ "/usr/bin/fish" ]
